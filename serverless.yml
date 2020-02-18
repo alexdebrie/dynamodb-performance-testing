@@ -1,0 +1,60 @@
+service: dynamodb-performance-testing
+
+plugins:
+  - serverless-python-requirements
+
+provider:
+  name: aws
+  runtime: python3.7
+  stage: dev
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:DescribeTable"
+        - "dynamodb:PutItem"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:TransactWriteItem"
+      Resource: !GetAtt TestTable.Arn
+  environment:
+    TABLE_NAME: !Ref TestTable
+
+functions:
+  putItem:
+    handler: put.handler
+  batchWriteItem5:
+    handler: batch_write.handler
+    environment:
+      BATCH_ITEM_COUNT: 5
+  batchWriteItem25:
+    handler: batch_write.handler
+    environment:
+      BATCH_ITEM_COUNT: 25
+  transactWriteItem5:
+    handler: transact_write.handler
+    environment:
+      TRANSACT_ITEM_COUNT: 5
+      FAIL: False
+  transactWriteItem25:
+    handler: transact_write.handler
+    environment:
+      TRANSACT_ITEM_COUNT: 25
+      FAIL: False
+  transactWriteItem5Fail:
+    handler: transact_write.handler
+    environment:
+      TRANSACT_ITEM_COUNT: 5
+      FAIL: True
+
+resources:
+  Resources:
+    TestTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: 'Id'
+            AttributeType: 'S'
+        KeySchema: 
+          - AttributeName: 'Id'
+            KeyType: 'HASH'
+        BillingMode: 'PAY_PER_REQUEST'
